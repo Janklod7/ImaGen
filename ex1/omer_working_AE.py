@@ -29,8 +29,8 @@ class MyDataset(torch.utils.data.Dataset):
         img_tensor = self.transform(self.image_set[idx])
         return img_tensor
 
-DATA_PATH = "C:/dataset/dataset/"
-TRAIN_SIZE = 100
+DATA_PATH = "C:/Users/shach/Documents/mini_dataset/"
+TRAIN_SIZE = 90
 TEST_SIZE = 10
 
 def load_local_data():
@@ -41,7 +41,6 @@ def load_local_data():
         im = image.imread(DATA_PATH+str(i).zfill(5)+".PNG")
 
         train.append(im)
-    print("end train")
     for i in range(TRAIN_SIZE,TRAIN_SIZE+TEST_SIZE):
         im = image.imread(DATA_PATH + str(i).zfill(5) + ".PNG")
         test.append(im)
@@ -78,13 +77,23 @@ class ConvAutoencoder(nn.Module):
 
     def forward(self, x):
         # encoder part
+        print (x[0].size())
         x = F.relu(self.conv1(x))
+        print(x[0].size())
         x = self.pool(x)
+        print(x[0].size())
         x = F.relu(self.conv2(x))
+        print(x[0].size())
         x = self.pool(x)
+        print(x[0].size())
         x = F.relu(self.conv3(x))
+        print(x[0].size())
         x = self.pool(x)
+        print(x[0].size())
         x = F.relu(self.convf(x))
+        print(x[0].size())
+        x = self.pool(x)
+        print(x[0].size())
         #x = torch.flatten(x, 1)
         #x = F.relu(self.lin1(x))
         #x = self.lin2(x)
@@ -93,31 +102,72 @@ class ConvAutoencoder(nn.Module):
         #x = F.relu(self.t_lin1(x))
         #x = F.relu(self.t_lin2(x))
         #x = F.relu(self.t_project(x))
+        print("---------------------")
         x = F.relu(self.t_conv0(x))
+        print(x[0].size())
         x = F.relu(self.t_norm0(x))
+        print(x[0].size())
         x = F.relu(self.t_conv1(x))
+        print(x[0].size())
         x = F.relu(self.t_conv2(x))
+        print(x[0].size())
         x = F.relu(self.t_norm2(x))
+        print(x[0].size())
         x = F.sigmoid(self.t_conv3(x))
+        print(x[0].size())
 
         return x
 
 
 
-
-
-
 if __name__ == "__main__":
     print("begin")
-    tr, ts = load_local_data()
-    real_batch = next(iter(tr))
-    #plt.figure(figsize=(8, 8))
-    #plt.axis("off")
-    #plt.title("Training Images")
-    #plt.imshow(
-        #np.transpose(vutils.make_grid(real_batch[0].to(torch.device("cpu"))[:64], padding=2, normalize=True).cpu(), (1, 2, 0)))
-    #plt.show()
+    train_loader, test_loader = load_local_data()
+
+    # Instantiate the model
     model = ConvAutoencoder()
+
+    # Loss function
+    criterion = nn.MSELoss() #L2 loss
+
+    # Optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+
+    def get_device():
+        if torch.cuda.is_available():
+            device = 'cuda:0'
+        else:
+            device = 'cpu'
+        return device
+
+
+    device = get_device()
+    print(device)
+    model.to(device)
+
+    # Epochs
+    n_epochs = 2
+
+    for epoch in range(1, n_epochs + 1):
+        # monitor training loss
+        train_loss = 0.0
+
+        # Training
+        for data in train_loader:
+            images = data
+            images = images.to(device)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, images)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * images.size(0)
+
+        train_loss = train_loss / len(train_loader)
+        print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch, train_loss))
+
+    # Batch of test images
     dataiter = iter(ts)
     images = dataiter.next()
     print(type(images[0]))
@@ -126,5 +176,8 @@ if __name__ == "__main__":
     after_model = model(images)
     pyplot.imshow(after_model[0].detach().permute(1, 2, 0))
     pyplot.show()
+
+
+
 
 
