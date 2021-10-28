@@ -15,9 +15,10 @@ from matplotlib import image
 from matplotlib import pyplot
 from torchvision import transforms as transforms
 
+
 class MyDataset(torch.utils.data.Dataset):
 
-    def __init__(self,image_set, transform=transforms.ToTensor()):
+    def __init__(self, image_set, transform=transforms.ToTensor()):
         self.transform = transform
         self.image_set = image_set
         self.image_count = len(image_set)
@@ -29,24 +30,29 @@ class MyDataset(torch.utils.data.Dataset):
         img_tensor = self.transform(self.image_set[idx])
         return img_tensor
 
+
 DATA_PATH = "C:/dataset/dataset/"
-TRAIN_SIZE = 90
-TEST_SIZE = 10
+TRAIN_SIZE = 10000
+TEST_SIZE = 1000
+DEBUG = False
+def printd(*args):
+    if DEBUG:
+        print(*args)
 
 def load_local_data():
-
     train = []
     test = []
     for i in range(TRAIN_SIZE):
-        im = image.imread(DATA_PATH+str(i).zfill(5)+".PNG")
+        im = image.imread(DATA_PATH + str(i).zfill(5) + ".PNG")
 
         train.append(im)
-    for i in range(TRAIN_SIZE,TRAIN_SIZE+TEST_SIZE):
+    for i in range(TRAIN_SIZE, TRAIN_SIZE + TEST_SIZE):
         im = image.imread(DATA_PATH + str(i).zfill(5) + ".PNG")
         test.append(im)
+
     train_dataset = MyDataset(train)
     test_dataset = MyDataset(test)
-    train_loader = torch.utils.data.DataLoader(train_dataset,shuffle=True, batch_size=4, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(train_dataset, shuffle=True, batch_size=4, num_workers=0)
     test_loader = torch.utils.data.DataLoader(test_dataset, shuffle=True, batch_size=4, num_workers=0)
     return train_loader, test_loader
 
@@ -56,74 +62,79 @@ class ConvAutoencoder(nn.Module):
         super(ConvAutoencoder, self).__init__()
 
         # Encoder
-        self.conv1 = nn.Conv2d(3, 16, 5)
+        self.conv1 = nn.Conv2d(3, 16, 3)
         self.conv2 = nn.Conv2d(16, 8, 4)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv3 = nn.Conv2d(8, 2, 3)
-        self.convf = nn.Conv2d(2, 1, 2)
-        #self.lin1 = nn.Linear(63*63*4, 4096)
-        #self.lin2 = nn.Linear(4096, 256)
+        self.conv3 = nn.Conv2d(8, 1, 3)
+        self.convf = nn.Conv2d(2, 1, 1)
+        # self.lin1 = nn.Linear(63*63*4, 4096)
+        # self.lin2 = nn.Linear(4096, 256)
         # Decoder
-        #self.t_lin1 = nn.Linear(256, 4096)
-        #self.t_lin2 = nn.Linear(4096, 63*63*4)
-        #self.t_project = nn.ConvTranspose2d(63*63*4, 4, 1, stride=2, bias=False)
-        #self.t_project = nn.ConvTranspose2d(4,15876,1)
+        # self.t_lin1 = nn.Linear(256, 4096)
+        # self.t_lin2 = nn.Linear(4096, 63*63*4)
+        # self.t_project = nn.ConvTranspose2d(63*63*4, 4, 1, stride=2, bias=False)
+        # self.t_project = nn.ConvTranspose2d(4,15876,1)
 
-        self.t_convb = nn.ConvTranspose2d(1, 1, 2, stride=1)
-        self.t_conv0 = nn.ConvTranspose2d(1, 2, 2, stride=2)
+        self.t_pool0 = nn.ConvTranspose2d(1, 1, 1, stride=1)
+        self.t_conv0 = nn.ConvTranspose2d(1, 1, 1, stride=2, output_padding=1)
         self.t_norm0 = nn.BatchNorm2d(2)
-        self.t_conv1 = nn.ConvTranspose2d(2, 8, 3, stride=2, output_padding=1)
-        self.t_conv2 = nn.ConvTranspose2d(8, 16, 4, stride=2)
+        self.t_pool1 = nn.ConvTranspose2d(1, 1, 2, stride=2)
+        self.t_conv1 = nn.ConvTranspose2d(1, 8, 3, stride=1)
+        self.t_pool2 = nn.ConvTranspose2d(8, 8, 2, stride=2)
+        self.t_conv2 = nn.ConvTranspose2d(8, 16, 4, stride=1)
+        self.t_pool3 = nn.ConvTranspose2d(16, 16, 2, stride=2)
         self.t_norm2 = nn.BatchNorm2d(16)
-        self.t_conv3 = nn.ConvTranspose2d(16, 3, 5, stride=2, output_padding=1)
-
-
+        self.t_conv3 = nn.ConvTranspose2d(16, 3, 3, stride=1)
 
     def forward(self, x):
         # encoder part
-        print (1,x[0].size())
-        x = F.relu(self.conv1(x))
-        print(2,x[0].size())
+        printd(1, x[0].size())
+        x = F.leaky_relu(self.conv1(x),0.1)
+        printd(2, x[0].size())
         x = self.pool(x)
-        print(3,x[0].size())
-        x = F.relu(self.conv2(x))
-        print(4,x[0].size())
+        printd(3, x[0].size())
+        x = F.leaky_relu(self.conv2(x),0.1)
+        printd(4, x[0].size())
         x = self.pool(x)
-        print(5,x[0].size())
-        x = F.relu(self.conv3(x))
-        print(6,x[0].size())
+        printd(5, x[0].size())
+        x = F.leaky_relu(self.conv3(x),0.1)
+        printd(6, x[0].size())
         x = self.pool(x)
-        print(7,x[0].size())
-        x = F.relu(self.convf(x))
-        print(8,x[0].size())
+        printd(7, x[0].size())
+        #x = F.relu(self.convf(x))
+        printd(8, x[0].size())
         x = self.pool(x)
-        print(9,x[0].size())
-        #x = torch.flatten(x, 1)
-        #x = F.relu(self.lin1(x))
-        #x = self.lin2(x)
+        printd(9, x[0].size())
+        # x = torch.flatten(x, 1)
+        # x = F.relu(self.lin1(x))
+        # x = self.lin2(x)
 
-        #decoder part
-        #x = F.relu(self.t_lin1(x))
-        #x = F.relu(self.t_lin2(x))
-        #x = F.relu(self.t_project(x))
-        print("---------------------")
-        x = F.relu(self.t_convb(x))
-        print(10, x[0].size())
-        x = F.relu(self.t_conv0(x))
-        print(9,x[0].size())
-        x = F.relu(self.t_norm0(x))
-        print(8,x[0].size())
-        x = F.relu(self.t_conv1(x))
-        print(7,x[0].size())
-        x = F.relu(self.t_conv2(x))
-        print(6,x[0].size())
-        x = F.relu(self.t_norm2(x))
-        print(5,x[0].size())
+        # decoder part
+        # x = F.relu(self.t_lin1(x))
+        # x = F.relu(self.t_lin2(x))
+        # x = F.relu(self.t_project(x))
+        printd("---------------------")
+        #x = F.relu(self.t_pool0(x))
+        printd(10, x[0].size())
+        #x = F.relu(self.t_conv0(x))
+        x = F.leaky_relu(self.t_pool1(x), 0.1)
+        printd(9, x[0].size())
+        #x = F.relu(self.t_norm0(x))
+        x = F.leaky_relu(self.t_pool1(x), 0.1)
+        printd(7.5, x[0].size())
+        x = F.leaky_relu(self.t_conv1(x),0.1)
+        printd(7, x[0].size())
+        x = F.leaky_relu(self.t_pool2(x),0.1)
+        printd(7.5, x[0].size())
+        x = F.leaky_relu(self.t_conv2(x),0.1)
+        printd(6, x[0].size())
+        x = F.leaky_relu(self.t_norm2(x),0.1)
+        x = F.leaky_relu(self.t_pool3(x),0.1)
+        printd(5.5, x[0].size())
         x = F.sigmoid(self.t_conv3(x))
-        print(4,x[0].size())
+        printd(4, x[0].size())
 
         return x
-
 
 
 if __name__ == "__main__":
@@ -134,7 +145,7 @@ if __name__ == "__main__":
     model = ConvAutoencoder()
 
     # Loss function
-    criterion = nn.MSELoss() #L2 loss
+    criterion = nn.MSELoss()  # L2 loss
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -153,7 +164,12 @@ if __name__ == "__main__":
     model.to(device)
 
     # Epochs
-    n_epochs = 6
+    n_epochs = 10
+
+    #dataiter = iter(test_loader)
+    #images = dataiter.next()
+    #pyplot.imshow(images[0].permute(1, 2, 0))
+    #pyplot.show()
 
     for epoch in range(1, n_epochs + 1):
         # monitor training loss
@@ -174,9 +190,6 @@ if __name__ == "__main__":
         print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch, train_loss))
 
     # Batch of test images
-    dataiter = iter(test_loader)
-    images = dataiter.next()
-    print(type(images[0]))
     pyplot.imshow(images[0].permute(1, 2, 0))
     pyplot.show()
     after_model = model(images)
