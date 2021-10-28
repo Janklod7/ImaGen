@@ -39,7 +39,7 @@ MODEL = model()    # !!! dont change this line !!!
 DEBUG = False
 
 # change to true to run a small batch and print sizes
-DEBUG_SIZES = True
+DEBUG_SIZES = False
 
 # use gpu via cuda
 USE_GPU = True
