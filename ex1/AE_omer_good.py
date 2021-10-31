@@ -7,28 +7,25 @@ class ConvAutoencoder(nn.Module):
 
     def __init__(self):
         super(ConvAutoencoder, self).__init__()
-        self.name = "omer pool linear"
-        # *************** Encoder **************** #
+        self.name = "good old omer"
 
-        self.pool = nn.MaxPool2d(2, 2)
+        # *************** Encoder **************** #
 
         self.conv1 = nn.Conv2d(3, 16, 3)
 
         self.conv2 = nn.Conv2d(16, 8, 4)
 
-        self.conv3 = nn.Conv2d(8, 2, 3)
+        self.pool = nn.MaxPool2d(2, 2)
 
-        #self.convf = nn.Conv2d(2, 1, 1)
+        self.conv3 = nn.Conv2d(8, 1, 3)
 
-        self.lin1 = nn.Linear(30 * 30 * 2, 30 * 30)
+        self.convf = nn.Conv2d(2, 1, 1)
 
-        self.lin2 = nn.Linear(30 * 30, 16 * 16)
+        self.lin1 = nn.Linear(30 * 30, 16 * 16)
 
         # *************** Decoder **************** #
 
         self.t_lin1 = nn.Linear(16 * 16, 30 * 30)
-
-        self.t_lin2 = nn.Linear(30 * 30, 30 * 30 * 2)
 
         self.t_pool0 = nn.ConvTranspose2d(1, 1, 1, stride=1)
 
@@ -36,9 +33,9 @@ class ConvAutoencoder(nn.Module):
 
         self.t_norm0 = nn.BatchNorm2d(2)
 
-        self.t_pool1 = nn.ConvTranspose2d(2, 2, 2, stride=2)
+        self.t_pool1 = nn.ConvTranspose2d(1, 1, 2, stride=2)
 
-        self.t_conv1 = nn.ConvTranspose2d(2, 8, 3, stride=1)
+        self.t_conv1 = nn.ConvTranspose2d(1, 8, 3, stride=1)
 
         self.t_pool2 = nn.ConvTranspose2d(8, 8, 2, stride=2)
 
@@ -52,7 +49,7 @@ class ConvAutoencoder(nn.Module):
 
     def forward(self, x):
 
-        return self.decoder_forward(self.encoder_forward(x),x.shape[0])
+        return self.decoder_forward(self.encoder_forward(x), x.shape[0])
 
     def encoder_forward(self, x):
 
@@ -76,21 +73,17 @@ class ConvAutoencoder(nn.Module):
 
         x = p.printsize(9, F.leaky_relu(self.lin1(x), p.LEAKY_RATE))
 
-        x = p.printsize(9, F.leaky_relu(self.lin2(x), p.LEAKY_RATE))
-
         return x
 
     def decoder_forward(self, x, s):
 
         # *************** Decoder **************** #
 
-        p.debug_print("\n---------------------\n", mode=p.DEBUG_SIZES)
+        p.debug_print("---------------------",mode=p.DEBUG_SIZES)
 
         x = p.printsize(1, F.leaky_relu(self.t_lin1(x), p.LEAKY_RATE))
 
-        x = p.printsize(1, F.leaky_relu(self.t_lin2(x), p.LEAKY_RATE))
-
-        x = p.printsize(2, torch.reshape(x, (s, 2, 30, 30)))
+        x = p.printsize(2, torch.reshape(x, (s, 1, 30, 30)))
 
         x = p.printsize(3, F.leaky_relu(self.t_pool1(x), p.LEAKY_RATE))
 

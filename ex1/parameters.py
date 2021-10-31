@@ -21,10 +21,12 @@ LEAKY_RATE = 0.1
 
 
 # number of epoches
-EPOCHS = 30
+EPOCHS = 100
+
 
 # increasing batch size and learning rates together
-INCREASE = 2
+INCREASE = 1
+
 # batch size
 BATCH_SIZE = 4*INCREASE
 
@@ -32,6 +34,8 @@ BATCH_SIZE = 4*INCREASE
 LEARNING_RATE = 0.001*INCREASE
 
 criterion = nn.MSELoss()
+
+#number of channels for conv layers
 
 LAYER1 = 64
 LAYER2 = 16
@@ -44,7 +48,8 @@ running parameters
 
 # autoencoder from different file
 # replace to your chosen autoencoder
-from shachar_simple import ConvAutoencoder as model    # change this line
+from AE_omer_good import ConvAutoencoder as model    # change this line
+
 
 MODEL = model()    # !!! dont change this line !!!
 
@@ -53,6 +58,8 @@ DEBUG = False
 
 # change to true to run a small batch and print sizes
 DEBUG_SIZES = False
+
+MIDDLE_STOP = 10
 
 # use gpu via cuda
 USE_GPU = True
