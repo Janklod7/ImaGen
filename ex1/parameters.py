@@ -1,3 +1,4 @@
+import torch.nn as nn
 """
 data parameters
 """
@@ -6,8 +7,10 @@ data parameters
 DATA_PATH = "C:/dataset/dataset/"
 
 # dataset sizes:
+TRAIN_SIZE = 1000
+
 VALIDATION_SIZE = 1000
-TRAIN_SIZE = 100
+
 
 """
 Hyper parameters
@@ -16,14 +19,24 @@ Hyper parameters
 # leaky relu allow rate
 LEAKY_RATE = 0.1
 
-# number of epoches
-EPOCHS = 100
 
+# number of epoches
+EPOCHS = 30
+
+# increasing batch size and learning rates together
+INCREASE = 2
 # batch size
-BATCH_SIZE = 4
+BATCH_SIZE = 4*INCREASE
 
 # learning rate
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.001*INCREASE
+
+criterion = nn.MSELoss()
+
+LAYER1 = 64
+LAYER2 = 16
+LAYER3 = 4
+LAYER4 = 1  # DO NOT CHANGE THIS!!!
 
 """
 running parameters
@@ -31,7 +44,7 @@ running parameters
 
 # autoencoder from different file
 # replace to your chosen autoencoder
-from AE_w_linear import ConvAutoencoder as model    # change this line
+from shachar_simple import ConvAutoencoder as model    # change this line
 
 MODEL = model()    # !!! dont change this line !!!
 

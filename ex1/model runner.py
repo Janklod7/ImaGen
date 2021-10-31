@@ -1,12 +1,13 @@
 from parameters import *
 import torch
 from torch.utils.data.sampler import SubsetRandomSampler
-import torch.nn as nn
+
 from matplotlib import image
 from matplotlib import pyplot
 from torchvision import transforms as transforms
 
-class Custom_dataset(torch.utils.data.Dataset):
+
+class CustomDataset(torch.utils.data.Dataset):
 
     def __init__(self, image_set, transform=transforms.ToTensor()):
         self.transform = transform
@@ -20,6 +21,7 @@ class Custom_dataset(torch.utils.data.Dataset):
         img_tensor = self.transform(self.image_set[idx])
         return img_tensor
 
+
 def load_local_data():
     train = []
     validation = []
@@ -27,16 +29,15 @@ def load_local_data():
         im = image.imread(DATA_PATH + str(i).zfill(5) + ".PNG")
         validation.append(im)
 
-    for i in range(VALIDATION_SIZE,VALIDATION_SIZE+TRAIN_SIZE):
+    for i in range(VALIDATION_SIZE, VALIDATION_SIZE+TRAIN_SIZE):
         im = image.imread(DATA_PATH + str(i).zfill(5) + ".PNG")
         train.append(im)
 
-
-    train_dataset = Custom_dataset(train)
-    validation_dataset = Custom_dataset(validation)
-    train_loader = torch.utils.data.DataLoader(train_dataset, shuffle=True, batch_size=4, num_workers=0)
+    train_dataset = CustomDataset(train)
+    validation_dataset = CustomDataset(validation)
+    train_loaderr = torch.utils.data.DataLoader(train_dataset, shuffle=True, batch_size=4, num_workers=0)
     validation_loader = torch.utils.data.DataLoader(validation_dataset, shuffle=True, batch_size=4, num_workers=0)
-    return train_loader, validation_loader
+    return train_loaderr, validation_loader
 
 
 if __name__ == "__main__":
@@ -45,13 +46,10 @@ if __name__ == "__main__":
 
     train_loader, test_loader = load_local_data()
 
-    print("loading data done")
+    print("loading data done\n\n\n")
 
     # Instantiate the model
     model = MODEL
-
-    # Loss function
-    criterion = nn.MSELoss()  # L2 loss
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -59,18 +57,16 @@ if __name__ == "__main__":
 
     def get_device():
         if torch.cuda.is_available() and USE_GPU:
-            device = 'cuda:0'
+            dev = 'cuda:0'
         else:
-            device = 'cpu'
-        return device
+            dev = 'cpu'
+        return dev
 
 
     device = get_device()
     model.to(device)
 
     print("device used:", device)
-
-
 
     print("number of epochs: ", EPOCHS)
 
@@ -98,13 +94,11 @@ if __name__ == "__main__":
         print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch, train_loss))
 
     # Batch of test images
-    pyplot.imshow(images[0].permute(1, 2, 0))
-    pyplot.show()
-    after_model = model(images)
-    pyplot.imshow(after_model[0].detach().permute(1, 2, 0))
+    idx = 5
+    pyplot.imshow(test_loader.dataset[idx].permute(1, 2, 0))
     pyplot.show()
 
-
-
-
-
+    a = model(test_loader.dataset[idx].to(device).unsqueeze(0))
+    # print(a.shape)
+    pyplot.imshow(a[0].detach().cpu().permute(1, 2, 0))
+    pyplot.show()
